@@ -1,0 +1,35 @@
+{
+  "planets": [
+    {
+      "ship_count": 2,
+      "x": -2.0,
+      "y": 0.0,
+      "owner": 1,
+      "name": "your planet"
+    },
+    {
+      "ship_count": 4,
+      "x": 2.0,
+      "y": 0.0,
+      "owner": 2,
+      "name": "enemy planet"
+    },
+    {
+      "ship_count": 2,
+      "x": 0.0,
+      "y": 2.0,
+      "owner": null,
+      "name": "neutral planet"
+    }
+  ],
+  "expeditions": [
+    {
+      "id": 169,
+      "ship_count": 8,
+      "origin": "your planet",
+      "destination": "enemy planet",
+      "owner": 1,
+      "turns_remaining": 2
+    }
+  ]
+}

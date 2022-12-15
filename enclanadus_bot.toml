@@ -1,0 +1,2 @@
+command = "cargo run"
+working_directory = "/home/arne/git/Enceladus-bot/"
