@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use priq::PriorityQueue;
 use smallvec::SmallVec;
 use vec_map::VecMap;
@@ -21,7 +22,7 @@ impl SimpleAlrorithm {
 
 
         let mut queue = self.calculate_scores(state).into_sorted_vec();
-        queue.reverse();
+        queue.reverse(); //make sure that the scores go from hight to low
         // dbg!(&state);
         // eprintln!("QUEUE {queue:?}");
         for (score, (planet_id, turns_ahead)) in queue.iter() {
@@ -30,9 +31,14 @@ impl SimpleAlrorithm {
             }
             // eprintln!("PLANET {planet_id:?}, TURNS_AHEAD: {turns_ahead:?}");
             
-            let nearest: SmallVec<[&(f32, usize); 3]> = state.nearest_planets[*planet_id]
+            let nearest: SmallVec<[_; 3]> = state.nearest_planets[*planet_id]
                 .iter()
-                .filter(|(_distance, other_planet_id)| state.predict_planet(0, *other_planet_id).0 == Some(1))
+                .map(|(distance, other_planet_id)| {
+                    let (owner, fleet_size) = state.predict_planet(*turns_ahead as i64, *other_planet_id);
+                    (distance, other_planet_id, owner, fleet_size)
+                }) 
+                .filter(|(_, _, owner, _)| *owner == Some(1)) // TODO: change Some(1) to variable stored in self
+                .sorted_by_key(|(distance, other_planet_id, owner, fleet_size)| -fleet_size + distance.ceil() as i64)
                 .take(3)
                 .collect();
 
@@ -40,7 +46,7 @@ impl SimpleAlrorithm {
             if nearest.is_empty() { 
                 break;
             }
-            let (distance, origin_planet_id) = nearest[0];
+            let (origin_distance, origin_planet_id, _, _) = nearest[0];
             // let origin_fleet_size = state.predict_planet(0, *origin_planet_id).1;
 
             let origin_deficit = (0..LOOK_AHEAD).map(|ta| {
@@ -58,7 +64,7 @@ impl SimpleAlrorithm {
             let deployable_origin_fleet_size = origin_deficit - 1;
             let mut predicted_destination_fleet_size = destination_fleet_size;
             if destiation_owner.is_some() {
-                predicted_destination_fleet_size += distance.ceil() as i64;
+                predicted_destination_fleet_size += origin_distance.ceil() as i64;
             }
             if predicted_destination_fleet_size < deployable_origin_fleet_size {
                 moves.push(
@@ -96,7 +102,7 @@ impl SimpleAlrorithm {
 
     fn calculate_score(&self, planet_id: usize, turns_ahead: i64, state: &mut State) -> f32 {
         let (owner, fleet_size) = state.predict_planet(turns_ahead, planet_id);
-        if owner == Some(1) {
+        if owner == Some(1) { // TODO: change Some(1) to variable stored in self
             return -3.0;
         }
         let nearest: SmallVec<[_; 3]> = state.nearest_planets[planet_id]
@@ -113,7 +119,9 @@ impl SimpleAlrorithm {
         }
         let (distance, _, _, other_fleet_size) = nearest[0];
         let score = (other_fleet_size - fleet_size) as f32 - distance.ceil();
-        return score;
+        score
+        // -fleet_size as f32 + SCORE_OFFSET
     }
-
 }
+
+const SCORE_OFFSET: f32 = 1000.0;
