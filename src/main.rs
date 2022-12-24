@@ -11,6 +11,7 @@ use crate::structs::{GameSituation, Output};
 mod state;
 mod structs;
 mod simple_algoritm;
+mod flow_1;
 
 
 const MAX_TURNS: u64 = 500;
