@@ -37,7 +37,7 @@ impl State {
         let planet_index = self.planet_map.get(planet_name).unwrap();
         // TODO: check if correct or if it is off by one 
         let turn_index = (self.turn + turns_ahead) as usize;
-        &mut self.state[turn_index as usize][*planet_index]
+        &mut self.state[turn_index][*planet_index]
     }
 
 
@@ -181,7 +181,7 @@ impl State {
                     continue;
                 }
                 let other_location = &planet_locations[other_index];
-                let distance = planet_location.distance(&other_location);
+                let distance = planet_location.distance(other_location);
                 queue.put(distance, other_index);
             }
 

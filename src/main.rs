@@ -1,4 +1,4 @@
-use std::{io::{self, BufRead}, time::Instant, collections::BTreeMap};
+use std::{io::{self, BufRead, Write}, time::Instant, collections::BTreeMap};
 
 use bit_set::BitSet;
 use simple_algoritm::SimpleAlrorithm;
@@ -34,9 +34,6 @@ fn main() {
 
     for line in stdin.lock().lines() {
 
-        if state.turn > 1 {
-            break;
-        }
         let now = Instant::now();
         let line = line.unwrap();
         eprintln!("=========================================================");
@@ -48,11 +45,11 @@ fn main() {
             state.update(input);
         }
 
-        match state.check_gameover() {
-            GameSituation::WON => eprintln!("WE HAVE WON!"),
-            GameSituation::LOST => eprintln!("WE HAVE LOST!"),
-            _ => {}
-        }
+        // match state.check_gameover() {
+        //     GameSituation::WON => eprintln!("WE HAVE WON!"),
+        //     GameSituation::LOST => eprintln!("WE HAVE LOST!"),
+        //     _ => {}
+        // }
 
 
         let output = Output {
@@ -63,7 +60,8 @@ fn main() {
         //     //TODO: do things
         //
         // }
-        println!("{}", serde_json::to_string(&output).unwrap());
+        println!("{}\n", serde_json::to_string(&output).unwrap());
+        std::io::stdout().flush().unwrap();
         state.tick();
     }
 }
