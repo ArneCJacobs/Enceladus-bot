@@ -36,7 +36,7 @@ impl SimpleAlrorithm {
                 .take(3)
                 .collect();
 
-            let destination_fleet_size = state.predict_planet(0, *planet_id).1; 
+            let (destiation_owner, destination_fleet_size) = state.predict_planet(0, *planet_id); 
             if nearest.is_empty() { 
                 break;
             }
@@ -56,7 +56,11 @@ impl SimpleAlrorithm {
             }
 
             let deployable_origin_fleet_size = origin_deficit - 1;
-            if destination_fleet_size + (distance.ceil() as i64) < deployable_origin_fleet_size {
+            let mut predicted_destination_fleet_size = destination_fleet_size;
+            if destiation_owner.is_some() {
+                predicted_destination_fleet_size += distance.ceil() as i64;
+            }
+            if predicted_destination_fleet_size < deployable_origin_fleet_size {
                 moves.push(
                     crate::structs::Move { 
                         origin: state.planet_names[*origin_planet_id].clone(), 
