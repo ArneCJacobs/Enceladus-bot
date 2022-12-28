@@ -1,6 +1,7 @@
 use std::{io::{self, BufRead, Write}, time::Instant, collections::BTreeMap};
 
 use bit_set::BitSet;
+use flow_1::Flow1Algorithm;
 use simple_algoritm::SimpleAlrorithm;
 use state::State;
 use structs::Input;
@@ -30,10 +31,17 @@ fn main() {
         planet_map: BTreeMap::new(),
         turn: 0,
     };
-    let mut algorithm = SimpleAlrorithm {};
+    let mut algorithm = Flow1Algorithm {
+        id: Some(1)
+    };
+    // let mut algorithm = SimpleAlrorithm {};
 
 
     for line in stdin.lock().lines() {
+        // TODO: remove
+        if state.turn > 2 { 
+            break;
+        }
 
         let now = Instant::now();
         let line = line.unwrap();
