@@ -1,7 +1,10 @@
+#![feature(drain_filter)]
+
 use std::{io::{self, BufRead, Write}, time::Instant, collections::BTreeMap};
 
 use bit_set::BitSet;
-use flow_1::Flow1Algorithm;
+use direct_flow::Flow1Algorithm;
+use neighbourhood::NeighbourhoodAlrorithm;
 use simple_algoritm::SimpleAlrorithm;
 use state::State;
 use structs::Input;
@@ -12,8 +15,8 @@ use crate::structs::{GameSituation, Output};
 mod state;
 mod structs;
 mod simple_algoritm;
-mod flow_1;
-
+mod direct_flow;
+mod neighbourhood;
 
 const MAX_TURNS: u64 = 500;
 const HARD_MAX_DURATION: u64 = 1000;
@@ -31,14 +34,12 @@ fn main() {
         planet_map: BTreeMap::new(),
         turn: 0,
     };
-    let mut algorithm = Flow1Algorithm {
-        id: Some(1)
-    };
+    let mut algorithm = NeighbourhoodAlrorithm::default();
     // let mut algorithm = SimpleAlrorithm {};
 
 
     for line in stdin.lock().lines() {
-        let now = Instant::now();
+        // let now = Instant::now();
         let line = line.unwrap();
         eprintln!("=========================================================");
         // eprintln!("{}", line);
