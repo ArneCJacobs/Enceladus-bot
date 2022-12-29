@@ -113,10 +113,13 @@ impl Flow1Algorithm {
 
                 if turns_ahead != 0 {
                     // if fleet isn't moved
-                    graph_builder.add_edge((origin_planet_id, turns_ahead-1, 1), origin_planet_node_in, Capacity(1), Cost(-1000));
                     graph_builder.add_edge((origin_planet_id, turns_ahead-1, 1), origin_planet_node_in, Capacity(i32::MAX), Cost(0)); //TODO: play with stagnancy cost
                 }
                 if owner == self.id {
+
+                    if turns_ahead != 0 {
+                        // graph_builder.add_edge((origin_planet_id, turns_ahead-1, 1), origin_planet_node_in, Capacity(1), Cost(-1000));
+                    }
                     graph_builder.add_edge(origin_planet_node_in, origin_planet_node_out, Capacity(i32::MAX), Cost(0)); // TODO: cost based on score/priority
 
                     if turns_ahead == 0 {
@@ -140,7 +143,8 @@ impl Flow1Algorithm {
                     }
                 } else {
                     // TODO: negative cost based on score/priority
-                    graph_builder.add_edge(origin_planet_node_in, origin_planet_node_out, Capacity(fleet_size as i32 + 1), Cost(-400));
+                    let score = self.calculate_score(origin_planet_id as usize, turns_ahead as i64, state);
+                    graph_builder.add_edge(origin_planet_node_in, origin_planet_node_out, Capacity(fleet_size as i32 + 1), Cost(score as i32 * 1000));
                     graph_builder.add_edge(origin_planet_node_in, origin_planet_node_out, Capacity(i32::MAX), Cost(0)); 
 
                     if turns_ahead == LOOK_AHEAD as i32 {
@@ -225,5 +229,27 @@ impl Flow1Algorithm {
 
         eprintln!("MOVE COUNT: {}", moves.len());
         moves
+    }
+
+    fn calculate_score(&self, planet_id: usize, turns_ahead: i64, state: &mut State) -> f32 {
+        let (owner, fleet_size) = state.predict_planet(turns_ahead, planet_id);
+        if owner == self.id { 
+            return -3.0;
+        }
+        let nearest: SmallVec<[_; 3]> = state.nearest_planets[planet_id]
+            .iter()
+            .map(|(distance, other_planet_id)| {
+                let (owner, fleet_size) = state.predict_planet(turns_ahead, *other_planet_id);
+                (distance, other_planet_id, owner, fleet_size)
+            }) 
+            .filter(|(_, _, owner, _)| *owner == self.id)
+            .take(1)
+            .collect();
+        if nearest.is_empty() {
+            return 0.0;
+        }
+        let (_distance, _, _, other_fleet_size) = nearest[0];
+        (other_fleet_size - fleet_size) as f32 / _distance
+        // -fleet_size as f32 + SCORE_OFFSET
     }
 }
