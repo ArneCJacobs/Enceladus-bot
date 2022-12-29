@@ -38,11 +38,6 @@ fn main() {
 
 
     for line in stdin.lock().lines() {
-        // TODO: remove
-        if state.turn > 2 { 
-            break;
-        }
-
         let now = Instant::now();
         let line = line.unwrap();
         eprintln!("=========================================================");

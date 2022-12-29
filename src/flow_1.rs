@@ -2,15 +2,99 @@ use std::{collections::{BTreeSet, BTreeMap}, fs::File, process::exit};
 use std::io::Write;
 
 use mcmf::{GraphBuilder, Vertex, Capacity, Cost};
+use serde_json::json;
 use smallvec::SmallVec;
 
 use crate::{structs::{Move, PlanetId}, state::State};
 
-const LOOK_AHEAD: usize = 1;
+const LOOK_AHEAD: usize = 10;
 const IDLE_PENALTY_COST: i32 = 1000;
 
 pub struct Flow1Algorithm {
     pub id: Option<u8>,
+}
+
+fn write_graph_to_file(graph_builder: &GraphBuilder<(i32, i32, i32)>) {
+    let mut id = 0;
+    let mut id_map = BTreeMap::new();
+    let mut nodes = Vec::new();
+    let mut edges = Vec::new();
+    // eprintln!("BEGIN DEBUG PRINT GRAPH");
+    for (begin, end, cap, cost) in &graph_builder.edge_list {
+        // eprintln!("{vertex:?}"); 
+        let start_node_id = id_map.entry(begin).or_insert({
+            id += 1;
+            // format!("id{id}")
+            id
+        }).clone();
+
+        let end_node_id = id_map.entry(end).or_insert({
+            id += 1;
+            id
+            // format!("id{id}")
+        }).clone();
+
+        // nodes.push(format!("{{\"from\": {start_node_id}, \"to\": {end_node_id}, \"label\":\"cap: {}, cost: {}\" }}", cap.0, cost.0));
+        if cap.0 == i32::MAX {
+            edges.push(
+                json!({
+                    "from": start_node_id,
+                    "to": end_node_id,
+                    "label": format!("cap: {}\ncost: {}", "MAX", cost.0)
+                })
+            );
+        } else {
+            edges.push(
+                json!({
+                    "from": start_node_id,
+                    "to": end_node_id,
+                    "label": format!("cap: {}\ncost: {}", cap.0, cost.0)
+                })
+            );
+        }
+    }
+    for (key, value) in id_map.iter() {
+        if let Vertex::Source = key {
+            nodes.push(json!({
+                "id": value,
+                "label": format!("{key:?}"),
+                "x": -300.0,
+                "y": 1500.0,
+            }));
+            continue;
+        } else if let Vertex::Sink = key {
+            nodes.push(json!({
+                "id": value,
+                "label": format!("{key:?}"),
+                "x": 2000.0,
+                "y": 1500.0,
+            }));
+            continue;
+        }
+        // nodes.push(format!("{{ \"id\":{value}, \"label\": \"{key:?}\" }}"));
+        let scale_factor = 200.0;
+        let Vertex::Node((planet_id, turns_ahead, in_out)) = key else {
+            todo!()
+        };
+        let mut x = *planet_id as f32 * scale_factor;
+        let mut y = *turns_ahead as f32 * scale_factor;
+        if *in_out == 1 {
+            x += 0.5 * scale_factor;
+            y += 0.5 * scale_factor;
+        }
+        nodes.push(json!({
+            "id": value,
+            "label": format!("{key:?}"),
+            "x": x,
+            "y": y,
+        }));
+        // graph_entries.push(format!("{value}(\"{key:?}\")"));
+    }
+    let mut node_file = File::create("./src/nodes.json").unwrap();
+    write!(&mut node_file, "{}", serde_json::to_string_pretty(&nodes).unwrap()).unwrap();
+    let mut edge_file = File::create("./src/edges.json").unwrap();
+    write!(&mut edge_file, "{}", serde_json::to_string_pretty(&edges).unwrap()).unwrap();
+
 }
 
 impl Flow1Algorithm {
@@ -51,6 +135,10 @@ impl Flow1Algorithm {
                         graph_builder.add_edge(origin_planet_node_out, Vertex::Sink, Capacity(i32::MAX), Cost(IDLE_PENALTY_COST));
                     }
                 } else {
+                    if turns_ahead != 0 {
+                        // if fleet isn't moved
+                        graph_builder.add_edge((origin_planet_id, turns_ahead-1, 1), origin_planet_node_in, Capacity(i32::MAX), Cost(0)); //TODO: play with stagnancy cost
+                    }
                     graph_builder.add_edge(origin_planet_node_in, origin_planet_node_out, Capacity(i32::MAX), Cost(-400)); // TODO: negative cost based on score/priority
                     if turns_ahead == LOOK_AHEAD as i32 {
                         // last nodes need an outflow
@@ -81,7 +169,7 @@ impl Flow1Algorithm {
                             (*destination_planet_id as i32, new_turns_ahead, 0), 
                             (*destination_planet_id as i32, new_turns_ahead, 1), 
                             Capacity(i32::MAX), 
-                            Cost(0) // TODO: negative cost based on score/priority
+                            Cost(-400) // TODO: negative cost based on score/priority
                         );
 
                         graph_builder.add_edge(
@@ -95,47 +183,9 @@ impl Flow1Algorithm {
                 }
             }
         }
-
-        let mut id = 0;
-        let mut id_map = BTreeMap::new();
-        let mut nodes = Vec::new();
-        let mut edges = Vec::new();
-        // eprintln!("BEGIN DEBUG PRINT GRAPH");
-        for (begin, end, cap, cost) in &graph_builder.edge_list {
-            // eprintln!("{vertex:?}"); 
-            let start_node_id = id_map.entry(begin).or_insert({
-                id += 1;
-                // format!("id{id}")
-                id
-            }).clone();
-
-            let end_node_id = id_map.entry(end).or_insert({
-                id += 1;
-                id
-                // format!("id{id}")
-            }).clone();
-                
-            // nodes.push(format!("{{\"from\": {start_node_id}, \"to\": {end_node_id}, \"label\":\"cap: {}, cost: {}\" }}", cap.0, cost.0));
-            if cap.0 == i32::MAX {
-                edges.push(format!("{{\"from\": {start_node_id}, \"to\": {end_node_id}, \"label\":\"cap: {}, cost: {}\" }}", "MAX", cost.0));
-                // graph_entries.push(format!("{start_node_id}-- \"cap: {}, cost: {}\" -->{end_node_id}", "MAX", cost.0));
-            } else {
-                edges.push(format!("{{\"from\": {start_node_id}, \"to\": {end_node_id}, \"label\":\"cap: {}, cost: {}\" }}", cap.0, cost.0));
-                // graph_entries.push(format!("{start_node_id}-- \"cap: {}, cost: {}\" -->{end_node_id}", cap.0, cost.0));
-            }
-        }
-        for (key, value) in id_map.iter() {
-            nodes.push(format!("{{ \"id\":{value}, \"label\": \"{key:?}\" }}"));
-            // graph_entries.push(format!("{value}(\"{key:?}\")"));
-        }
-        let mut node_file = File::create("./src/nodes.json").unwrap();
-        write!(&mut node_file, "[\n\t{}\n]", nodes.join(",\n")).unwrap();
-        let mut edge_file = File::create("./src/edges.json").unwrap();
-        write!(&mut edge_file, "[\n\t{}\n]", edges.join(",\n")).unwrap();
-        exit(0);
-        // for entry in edges /* { */
-        // }
-        // eprintln!("END DEBUG PRINT GRAPH");
+        
+        // write_graph_to_file(&graph_builder);
+        // exit(0);
 
         let (_cost, paths) = graph_builder.mcmf();
         eprintln!("COST: {_cost}");
