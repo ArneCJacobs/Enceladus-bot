@@ -7,7 +7,7 @@ use smallvec::SmallVec;
 
 use crate::{structs::{Move, PlanetId}, state::State};
 
-const LOOK_AHEAD: usize = 10;
+const LOOK_AHEAD: usize = 40;
 const IDLE_PENALTY_COST: i32 = 1000;
 
 pub struct Flow1Algorithm {
@@ -110,6 +110,12 @@ impl Flow1Algorithm {
                 let origin_planet_node_out = (origin_planet_id, turns_ahead, 1);
                 // let time_index = state.turn + turns_ahead;
                 let (owner, fleet_size) = state.predict_planet(turns_ahead as i64, origin_planet_id as PlanetId);
+
+                if turns_ahead != 0 {
+                    // if fleet isn't moved
+                    graph_builder.add_edge((origin_planet_id, turns_ahead-1, 1), origin_planet_node_in, Capacity(1), Cost(-1000));
+                    graph_builder.add_edge((origin_planet_id, turns_ahead-1, 1), origin_planet_node_in, Capacity(i32::MAX), Cost(0)); //TODO: play with stagnancy cost
+                }
                 if owner == self.id {
                     graph_builder.add_edge(origin_planet_node_in, origin_planet_node_out, Capacity(i32::MAX), Cost(0)); // TODO: cost based on score/priority
 
@@ -126,8 +132,6 @@ impl Flow1Algorithm {
                             graph_builder.add_edge(Vertex::Source, origin_planet_node_in, Capacity(fleet_size as i32), Cost(0));
                             // TODO: edge (with negative cost, to that it is always taken) straight to Sink if an enemy expedition arrives
                         }
-                        // if fleet isn't moved
-                        graph_builder.add_edge((origin_planet_id, turns_ahead-1, 1), origin_planet_node_in, Capacity(i32::MAX), Cost(0)); //TODO: play with stagnancy cost
                     }
 
                     if turns_ahead == LOOK_AHEAD as i32 {
@@ -135,11 +139,10 @@ impl Flow1Algorithm {
                         graph_builder.add_edge(origin_planet_node_out, Vertex::Sink, Capacity(i32::MAX), Cost(IDLE_PENALTY_COST));
                     }
                 } else {
-                    if turns_ahead != 0 {
-                        // if fleet isn't moved
-                        graph_builder.add_edge((origin_planet_id, turns_ahead-1, 1), origin_planet_node_in, Capacity(i32::MAX), Cost(0)); //TODO: play with stagnancy cost
-                    }
-                    graph_builder.add_edge(origin_planet_node_in, origin_planet_node_out, Capacity(i32::MAX), Cost(-400)); // TODO: negative cost based on score/priority
+                    // TODO: negative cost based on score/priority
+                    graph_builder.add_edge(origin_planet_node_in, origin_planet_node_out, Capacity(fleet_size as i32 + 1), Cost(-400));
+                    graph_builder.add_edge(origin_planet_node_in, origin_planet_node_out, Capacity(i32::MAX), Cost(0)); 
+
                     if turns_ahead == LOOK_AHEAD as i32 {
                         // last nodes need an outflow
                         graph_builder.add_edge(
