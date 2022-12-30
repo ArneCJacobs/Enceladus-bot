@@ -28,6 +28,8 @@ impl NeighbourhoodAlrorithm {
         let mut moves = Vec::new();
 
         // TODO: for state, take into account currently planned moves
+        // TODO: calculate surplus for each allied planet beforehand, and if it is negative treat
+        // it as an enemy planet
         for origin_planet_id in 0..state.planet_names.len() {
             let (origin_planet_owner, _origin_planet_fleet_size) = state.predict_planet(0, origin_planet_id);
             if origin_planet_owner != self.id {
@@ -66,6 +68,10 @@ impl NeighbourhoodAlrorithm {
             let mut sendable_origin_fleet_size = origin_surplus - 1;
 
 
+            // TODO: instead of always prioritising the enemies, take both allied and enemy planets
+            // into account at the same time, and prioritize them according to a score function
+            // TODO: score function for a planet takes into account how easy/fast it can take over
+            // neighbouring planets
             if !enemies.is_empty() && sendable_origin_fleet_size >= 0 {
                 enemies.sort_by_key(|(distance, _destination_planet_id, _destination_owner, destination_fleet_size)| {
                     distance.ceil() as i64 + destination_fleet_size - sendable_origin_fleet_size

@@ -1,0 +1,2 @@
+command = "./target/release/enceladus-bot"
+working_directory = "/home/arne/git/Enceladus-bot/"
