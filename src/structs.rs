@@ -3,9 +3,9 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 
 pub enum GameSituation {
-    WON,
-    LOST,
-    ONGOING,
+    Won,
+    Lost,
+    Ongoing,
 }
 
 pub type PlanetName = String;
@@ -78,7 +78,7 @@ pub trait IntoPlanetId {
 }
 
 impl IntoPlanetId for PlanetId {
-    fn into_planet_id(&self, planet_map: &BTreeMap<PlanetName, PlanetId>) -> PlanetId {
+    fn into_planet_id(&self, _planet_map: &BTreeMap<PlanetName, PlanetId>) -> PlanetId {
         *self
     }
 }

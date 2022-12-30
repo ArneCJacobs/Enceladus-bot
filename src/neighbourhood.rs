@@ -15,7 +15,7 @@ impl Default for NeighbourhoodAlrorithm {
     fn default() -> Self {
         NeighbourhoodAlrorithm { 
             id: Some(1), 
-            neighbourhood_size: 5, 
+            neighbourhood_size: 7, 
             friendly_load_balancing: 2,
             look_ahead: 20,
         }
@@ -29,7 +29,7 @@ impl NeighbourhoodAlrorithm {
 
         // TODO: for state, take into account currently planned moves
         for origin_planet_id in 0..state.planet_names.len() {
-            let (origin_planet_owner, origin_planet_fleet_size) = state.predict_planet(0, origin_planet_id);
+            let (origin_planet_owner, _origin_planet_fleet_size) = state.predict_planet(0, origin_planet_id);
             if origin_planet_owner != self.id {
                 continue;
             }

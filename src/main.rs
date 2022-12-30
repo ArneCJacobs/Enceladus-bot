@@ -1,15 +1,13 @@
 #![feature(drain_filter)]
 
-use std::{io::{self, BufRead, Write}, time::Instant, collections::BTreeMap};
+use std::{io::{self, BufRead, Write}, collections::BTreeMap};
 
 use bit_set::BitSet;
-use direct_flow::Flow1Algorithm;
 use neighbourhood::NeighbourhoodAlrorithm;
-use simple_algoritm::SimpleAlrorithm;
 use state::State;
 use structs::Input;
 
-use crate::structs::{GameSituation, Output};
+use crate::structs::Output;
 
 
 mod state;
@@ -19,7 +17,9 @@ mod direct_flow;
 mod neighbourhood;
 
 const MAX_TURNS: u64 = 500;
+#[allow(dead_code)]
 const HARD_MAX_DURATION: u64 = 1000;
+#[allow(dead_code)]
 const MAX_DURATION: u64 = 800;
 
 fn main() {

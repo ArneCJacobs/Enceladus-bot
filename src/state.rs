@@ -5,7 +5,6 @@ use bit_set::BitSet;
 use itertools::Itertools;
 use prettytable::{Table, Cell, Row};
 use priq::PriorityQueue;
-use smallvec::SmallVec;
 
 use crate::{MAX_TURNS, structs::{GameSituation, Input, PlayerId, PlanetName, PlanetLocation, PlanetId, IntoPlanetId}};
 
@@ -41,6 +40,7 @@ impl State {
     }
 
 
+    #[allow(dead_code)]
     pub fn predict_planets(&self, turns_ahead: i64) -> Vec<(Option<PlayerId>, i64)> {
         // let turn_index = self.turn + turns_ahead;
         let mut return_vec = Vec::new();
@@ -115,17 +115,18 @@ impl State {
             for planet_name in &self.planet_names {
                 let (owner, amount) = self.predict_planet(i, planet_name);
                 let cell = Cell::new(
-                    &format!("{:?}\n{:?}", owner, amount)
+                    &format!("{owner:?}\n{amount:?}")
                 );
                 predict_row.push(cell);
             }
             table.add_row(Row::new(predict_row));
         }
         eprintln!("{:?}", self.current_state.expeditions);
-        eprintln!("{}", table);
+        eprintln!("{table}");
 
     }
 
+    #[allow(dead_code)]
     pub fn check_gameover(&self) -> GameSituation {
         // TODO: currently only checks units on planets and does not take expeditions into account 
         let binding = self.predict_planets(1);
@@ -134,24 +135,24 @@ impl State {
             .into_grouping_map_by(|(owner, _)| owner)
             .fold(0, |acc, _key, (_, val)| acc + val);
 
-        let temp = self.current_state.planets
-            .iter()
-            .into_grouping_map_by(|planet| planet.owner)
-            .fold(0, |acc, _key, val| acc + val.ship_count);
+        // let temp = self.current_state.planets
+        //     .iter()
+        //     .into_grouping_map_by(|planet| planet.owner)
+        //     .fold(0, |acc, _key, val| acc + val.ship_count);
         // eprintln!("current   : {:?}", self.current_state.expeditions);
         // eprintln!("current   : {:?}", temp);
         // eprintln!("prediction: {:?}", ship_counts);
         if !ship_counts.contains_key(&Some(1)) {
-            return GameSituation::LOST;
+            return GameSituation::Lost;
         } 
 
         let other_key = ship_counts.keys()
             .into_iter()
             .find(|&&&key| key.is_some() && key != Some(1));
         if other_key.is_none() {
-            return GameSituation::WON;
+            return GameSituation::Won;
         }
-        GameSituation::ONGOING 
+        GameSituation::Ongoing 
     } 
 
     pub fn new(input: Input) -> Self {
@@ -173,10 +174,10 @@ impl State {
             planet_locations.push(planet.into());
         }
 
-        for (index, planet) in input.planets.iter().enumerate() {
+        for (index, _planet) in input.planets.iter().enumerate() {
             let mut queue = PriorityQueue::new();
             let planet_location = &planet_locations[index];
-            for (other_index, other_planet) in input.planets.iter().enumerate() {
+            for (other_index, _other_planet) in input.planets.iter().enumerate() {
                 if other_index == index {
                     continue;
                 }
@@ -213,7 +214,7 @@ impl State {
             self.saved_expeditions.insert(expedition.id as usize);
             let state_cell = self.get_state_cell(&expedition.destination, expedition.turns_remaining);
             state_cell.deltas.push(
-                (expedition.owner, expedition.ship_count as i64)
+                (expedition.owner, expedition.ship_count)
             );
         }
         input.planets.sort_by_key(|planet| self.planet_map[&planet.name]);

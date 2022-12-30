@@ -1,13 +1,13 @@
 use itertools::Itertools;
 use priq::PriorityQueue;
 use smallvec::SmallVec;
-use vec_map::VecMap;
 
-use crate::{state::State, structs::{Output, Move}};
+use crate::{state::State, structs::Move};
 
 // TODO: make field of SimpleAlrorithm 
 const LOOK_AHEAD: usize = 20;
 
+#[allow(dead_code)]
 pub struct SimpleAlrorithm {
     // first index is planet, second is time
     // scores: VecMap<VecMap<f32>>
@@ -15,6 +15,7 @@ pub struct SimpleAlrorithm {
 }
 
 
+#[allow(dead_code)]
 impl SimpleAlrorithm {
     pub fn calculate(&mut self, state: &mut State) -> Vec<Move> {
         // self.scores.clear();
@@ -38,7 +39,7 @@ impl SimpleAlrorithm {
                     (distance, other_planet_id, owner, fleet_size)
                 }) 
                 .filter(|(_, _, owner, _)| *owner == Some(1)) // TODO: change Some(1) to variable stored in self
-                .sorted_by_key(|(distance, other_planet_id, owner, fleet_size)| -fleet_size + distance.ceil() as i64)
+                .sorted_by_key(|(distance, _other_planet_id, _owner, fleet_size)| -fleet_size + distance.ceil() as i64)
                 .take(3)
                 .collect();
 
@@ -133,10 +134,7 @@ impl SimpleAlrorithm {
             return 0.0;
         }
         let (distance, _, _, other_fleet_size) = nearest[0];
-        let score = (other_fleet_size - fleet_size) as f32 - distance.ceil();
-        score
+        (other_fleet_size - fleet_size) as f32 - distance.ceil()
         // -fleet_size as f32 + SCORE_OFFSET
     }
 }
-
-const SCORE_OFFSET: f32 = 1000.0;

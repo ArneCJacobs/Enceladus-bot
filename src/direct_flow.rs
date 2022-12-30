@@ -1,4 +1,4 @@
-use std::{collections::{BTreeSet, BTreeMap}, fs::File, process::exit};
+use std::{collections::BTreeMap, fs::File};
 use std::io::Write;
 
 use mcmf::{GraphBuilder, Vertex, Capacity, Cost};
@@ -10,31 +10,28 @@ use crate::{structs::{Move, PlanetId}, state::State};
 const LOOK_AHEAD: usize = 40;
 const IDLE_PENALTY_COST: i32 = 1000;
 
+#[allow(dead_code)]
 pub struct Flow1Algorithm {
     pub id: Option<u8>,
 }
 
+#[allow(dead_code)]
 fn write_graph_to_file(graph_builder: &GraphBuilder<(i32, i32, i32)>) {
     let mut id = 0;
     let mut id_map = BTreeMap::new();
     let mut nodes = Vec::new();
     let mut edges = Vec::new();
-    // eprintln!("BEGIN DEBUG PRINT GRAPH");
     for (begin, end, cap, cost) in &graph_builder.edge_list {
-        // eprintln!("{vertex:?}"); 
-        let start_node_id = id_map.entry(begin).or_insert({
-            id += 1;
-            // format!("id{id}")
-            id
-        }).clone();
-
-        let end_node_id = id_map.entry(end).or_insert({
+        let start_node_id = *id_map.entry(begin).or_insert({
             id += 1;
             id
-            // format!("id{id}")
-        }).clone();
+        });
 
-        // nodes.push(format!("{{\"from\": {start_node_id}, \"to\": {end_node_id}, \"label\":\"cap: {}, cost: {}\" }}", cap.0, cost.0));
+        let end_node_id = *id_map.entry(end).or_insert({
+            id += 1;
+            id
+        });
+
         if cap.0 == i32::MAX {
             edges.push(
                 json!({
@@ -97,6 +94,7 @@ fn write_graph_to_file(graph_builder: &GraphBuilder<(i32, i32, i32)>) {
 
 }
 
+#[allow(dead_code)]
 impl Flow1Algorithm {
     pub fn calculate(&mut self, state: &mut State) -> Vec<Move> {
         // let mut cost_edges: BTreeSet<_> = BTreeSet::new();
@@ -208,10 +206,7 @@ impl Flow1Algorithm {
             // })
             .flat_map(|path| path.edges()) //TODO: take the first 3 or 4 or so
             .filter(|edge| {
-                match (edge.a, edge.b) {
-                    (Vertex::Node((origin_planet_id, 0, 1)), Vertex::Node((destination_planet_id, _, _))) if origin_planet_id != destination_planet_id => true,
-                    _ => false
-                }
+                matches!((edge.a, edge.b), (Vertex::Node((origin_planet_id, 0, 1)), Vertex::Node((destination_planet_id, _, _))) if origin_planet_id != destination_planet_id)
             })
             .map(|edge| {
                 let Vertex::Node((origin_planet_id, _, _)) = edge.a else {
