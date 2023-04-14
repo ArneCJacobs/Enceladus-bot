@@ -15,6 +15,7 @@ mod structs;
 mod simple_algoritm;
 mod direct_flow;
 mod neighbourhood;
+mod ants;
 
 const MAX_TURNS: u64 = 500;
 #[allow(dead_code)]

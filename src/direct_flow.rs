@@ -194,7 +194,6 @@ impl Flow1Algorithm {
 
         let (_cost, paths) = graph_builder.mcmf();
         eprintln!("COST: {_cost}");
-        // TODO: transform paths into moves 
         let moves: Vec<_> = paths.iter()
             // .map(|path| {
             //     eprintln!("PATH START == COST: {}, FLOW: {}", path.cost(), path.amount());
